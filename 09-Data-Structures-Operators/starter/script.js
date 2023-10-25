@@ -269,9 +269,37 @@ const me = {
 // console.log(me.location.city);
 console.log(me?.location?.city);
 
+console.log(restaurant);
+const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+console.log(restaurant.openingHours);
+console.log(restaurant.openingHours.thu);
+console.log(restaurant.openingHours.thu.open);
+
+for (const day of days) {
+  const open = restaurant.openingHours[day]?.open ?? 'closed';
+  console.log(`On ${day} we open at ${open}`);
+}
+
+console.log(restaurant.order?.(1, 2) ?? "Method doesn't exist");
+console.log(restaurant.orderDessert?.(1, 2) ?? "Method doesn't exist");
+
+console.log('-----Practice-------');
+const values = Object.values(openingHours);
+console.log(values);
+const entries = Object.entries(openingHours);
+for (const entry of entries) {
+  console.log(entry);
+}
+for (const [day, { open, close }] of entries) {
+  console.log(`On ${day} we are open at ${open} and close at ${close}`);
+}
+
+console.log('-----Practice-------');
 //SETS
 const ordersSet = new Set(['Pizza', 4, 'Pasta', 'Risotto', 'Pasta', 'Pizza']);
 console.log(ordersSet);
+console.log(ordersSet.size);
+console.log(ordersSet.has('Pizza'));
 
 const testArray = ['Pizza', 4, 'Pasta', 'Risotto', 'Pasta', 'Pizza'];
 console.log(testArray);
@@ -281,15 +309,15 @@ console.log(testSet);
 //MAPS
 //create a new empty map
 const rest = new Map();
-console.log(rest);
+// console.log(rest);
 
 //fill the map using the .set method
 rest.set('name', 'Classico Italiano');
-console.log(rest);
+// console.log(rest);
 rest.set(1, 'Firenze, Italy');
-console.log(rest);
+// console.log(rest);
 rest.set(2, 'Lisbon, Portugal');
-console.log(rest);
+// console.log(rest);
 
 rest
   .set('categories', ['Italian', 'Pizzeria', 'Vegetarian', 'Organic'])
@@ -298,6 +326,8 @@ rest
   .set(true, 'We are open')
   .set(false, 'We are closed');
 
+console.log(rest);
+
 console.log(rest.get('name'));
 console.log(rest.get(true));
 console.log(rest.get(false));
@@ -305,3 +335,41 @@ console.log(rest.get(false));
 const time = 23;
 
 console.log(rest.get(time < 11));
+
+rest.set(document.querySelector('h1'), 'Heading');
+console.log(rest);
+
+//create a new map without using set - useful for when lots of values
+
+const question = new Map([
+  ['question', 'What is the best programming language in the world?'],
+  [1, 'C'],
+  [2, 'Java'],
+  [3, 'JavaScript'],
+  ['correct', 3],
+  [true, 'Correct'],
+  [false, 'Try Again'],
+]);
+
+console.log(question);
+
+//Convert an object to a Map
+const openHoursMap = new Map(Object.entries(openingHours));
+
+//Convert a Map to an array
+const questionArray = [...question];
+console.log(questionArray);
+console.log([...question.entries()]);
+console.log([...question.keys()]);
+console.log([...question.values()]);
+
+console.log(openHoursMap);
+
+//loop over a map
+console.log(question.get('question'));
+//destructure each key : value pair in the question map
+for (const [key, value] of question) {
+  if (typeof key === 'number') {
+    console.log(`${key} : ${value}`);
+  }
+}
