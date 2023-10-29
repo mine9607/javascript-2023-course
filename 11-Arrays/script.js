@@ -71,9 +71,14 @@ const currencies = new Map([
   ['GBP', 'Pound sterling'],
 ]);
 
-const displayMovements = function (movements) {
+const displayMovements = (acct, sort = false) => {
   containerMovements.innerHTML = '';
-  movements.forEach(function (mov, i) {
+
+  const sortedMovements = sort
+    ? acct.movements.slice().sort((a, b) => a - b)
+    : acct.movements;
+
+  sortedMovements.forEach(function (mov, i) {
     const type = mov > 0 ? 'deposit' : 'withdrawal';
 
     const html = `
@@ -89,23 +94,28 @@ const displayMovements = function (movements) {
   });
 };
 
-const calcDisplayBalance = movements => {
-  const balance = movements.reduce((acc, mov, i) => acc + mov, 0);
-  labelBalance.textContent = `${balance}\u20AC`;
+// const calcDisplayBalance = movements => {
+//   const balance = movements.reduce((acc, mov, i) => acc + mov, 0);
+//   labelBalance.textContent = `${balance}\u20AC`;
+// };
+// --------Refactor----- the function above to accept the current account as input instead of the movements
+const calcDisplayBalance = acct => {
+  acct.balance = acct.movements.reduce((acc, mov, i) => acc + mov, 0);
+  labelBalance.textContent = `${acct.balance}\u20AC`;
 };
 
 // note - could refactor to use ternary operator to apply the chained methods based on if the movement is negative or positive?
-const calcDisplaySummary = movements => {
-  const depositTotal = movements
+const calcDisplaySummary = acct => {
+  const depositTotal = acct.movements
     .filter(mov => mov > 0)
     .reduce((acc, curr) => acc + curr, 0);
   labelSumIn.textContent = `${depositTotal}\u20AC`;
-  const withdrawalTotal = movements
+  const withdrawalTotal = acct.movements
     .filter(mov => mov < 0)
     .reduce((acc, curr) => acc + curr, 0);
   labelSumOut.textContent = `${Math.abs(withdrawalTotal)}\u20AC`;
 
-  const interest = movements
+  const interest = acct.movements
     .filter(mov => mov > 0)
     .map(mov => (mov * currentAccount.interestRate) / 100)
     .reduce((acc, curr) => (curr > 1 ? acc + curr : acc + 0));
@@ -124,7 +134,15 @@ const createUsernames = accounts => {
 };
 
 const users = createUsernames(accounts);
-console.log(users);
+
+const updateUI = acct => {
+  // Display movements
+  displayMovements(acct);
+  // Display balance
+  calcDisplayBalance(acct);
+  // Display Summary
+  calcDisplaySummary(acct);
+};
 
 // Event Handler
 let currentAccount;
@@ -134,26 +152,117 @@ btnLogin.addEventListener('click', e => {
   currentAccount = accounts.find(
     acct => acct.username === inputLoginUsername.value
   );
-  console.log(currentAccount);
+
   currentAccount?.pin === +inputLoginPin.value
     ? (containerApp.style.opacity = 1)
     : alert('Incorrect Login. Please Try again');
 
   //empy input fields and set opacity to 0
   inputLoginUsername.value = inputLoginPin.value = '';
-
+  inputLoginUsername.blur();
   inputLoginPin.blur();
 
   // Display UI and message
   labelWelcome.textContent = `Welcome back, ${
     currentAccount.owner.split(' ')[0]
   }!`;
-  // Display movements
-  displayMovements(currentAccount.movements);
-  // Display balance
-  calcDisplayBalance(currentAccount.movements);
-  // Display Summary
-  calcDisplaySummary(currentAccount.movements);
+
+  // update UI
+  updateUI(currentAccount);
+});
+
+btnTransfer.addEventListener('click', e => {
+  e.preventDefault();
+
+  const amount = +inputTransferAmount.value;
+  const receiverAcct = accounts.find(
+    acct => acct.username === inputTransferTo.value
+  );
+
+  // Add negative movement to current acct
+  // note we could refactor to ensure that the money is only transferred to valid accounts
+  if (amount <= 0) {
+    alert('Please input an amount to transfer');
+    return;
+  } else if (currentAccount.balance <= Math.abs(amount)) {
+    alert('Insufficient funds to process transfer');
+    return;
+  } else if (receiverAcct?.username === currentAccount.username) {
+    alert('Incorrect transfer account - please choose a valid account');
+    return;
+  } else {
+    currentAccount.movements.push(-amount);
+  }
+  // Add positive movement to receiver acct
+  receiverAcct.movements.push(amount);
+
+  //Display new Acct Balance, Summary and Movments
+  updateUI(currentAccount);
+
+  //Clear out input fields
+  inputTransferAmount.value = inputTransferTo.value = '';
+  inputTransferTo.blur();
+  inputTransferAmount.blur();
+});
+
+// Create a Bank Loan that is only approved if there is a deposit > 10% of loan amount requested
+btnLoan.addEventListener('click', e => {
+  e.preventDefault();
+
+  const loan = +inputLoanAmount.value;
+
+  const checkDeposits = currentAccount.movements
+    .filter(mov => mov > 0)
+    .some(mov => mov >= 0.1 * loan);
+
+  const maxDeposit = currentAccount.movements.reduce(
+    (acc, curr) => (acc > curr ? acc : curr),
+    0
+  );
+
+  checkDeposits
+    ? currentAccount.movements.push(loan)
+    : alert(`You may only take out a loan up to ${maxDeposit / 0.1}`);
+
+  updateUI(currentAccount);
+
+  inputLoanAmount.value = '';
+  inputLoanAmount.blur();
+});
+
+// where are we accessing the current account
+
+//Close Account
+btnClose.addEventListener('click', e => {
+  e.preventDefault();
+
+  // find the account to close
+  if (inputCloseUsername.value !== currentAccount.username) {
+    alert('invalid user.  Please try again');
+  } else if (+inputClosePin.value !== currentAccount.pin) {
+    alert('invalid pin.  Please try again');
+  } else {
+    // Find index of user account
+    const userAccountIndex = accounts.findIndex(
+      acct => acct.username === currentAccount.username
+    );
+    // Remove user account from accounts array
+    accounts.splice(userAccountIndex, 1);
+  }
+  inputCloseUsername.value = inputClosePin.value = '';
+  inputClosePin.blur();
+  inputCloseUsername.blur();
+
+  containerApp.style.opacity = 0;
+  console.log(accounts);
+});
+
+let sorted = false;
+
+btnSort.addEventListener('click', e => {
+  e.preventDefault();
+  displayMovements(currentAccount, !sorted);
+  sorted = !sorted;
 });
 /////////////////////////////////////////////////
 
@@ -379,7 +488,7 @@ const totalDepositsUSD = movements
 const findDeposits = movements.find((mov, i) => mov > 0);
 
 // console.log(findDeposits);
-console.log(accounts);
+// console.log(accounts);
 
 //can be used to loop over an array of users to find the userID associated with a class or an account
 
@@ -393,5 +502,73 @@ const [a, b, ...c] = arrTest;
 const newArray = [...a, ...b, ...c];
 console.log(newArray);
 
-console.log(arrTest);
 console.log(arrTest.flat());
+
+const acctMovements = accounts.map(acct => acct.movements);
+console.log(acctMovements);
+const flatMovements = acctMovements.flat();
+console.log(flatMovements);
+const bankBalance = flatMovements.reduce((acc, curr) => acc + curr, 0);
+console.log(bankBalance);
+// FlatMaps
+const flatMap = accounts.flatMap(acc => acc.movements);
+console.log(flatMap);
+const chainedbankBalance = accounts
+  .flatMap(acc => acc.movements)
+  .reduce((acc, curr) => acc + curr, 0);
+console.log(chainedbankBalance);
+
+// Sort Method
+// const sortedArray1 = movements.sort((a, b) => a - b);
+// console.log(sortedArray1);
+
+// const sortedArray2 = movements.sort((a, b) => b - a);
+// console.log(sortedArray2);
+
+// return < 0 A, B (keep order)
+// return > 0 A, B (switch order)
+
+// Ascending
+console.log(movements);
+movements.sort((a, b) => {
+  if (a > b) return 1;
+  if (b > a) return -1;
+});
+console.log(movements);
+
+// Descending
+movements.sort((a, b) => {
+  if (a > b) return -1;
+  if (b > a) return 1;
+});
+console.log(movements);
+
+const testArray = [1, 2, 3, 4, 5, 6, 7];
+console.log(testArray);
+
+const testArrayv2 = Array.from(testArray);
+console.log(testArrayv2);
+
+const testArrayv3 = Array.from(
+  { length: testArray.length },
+  (curr, i) => i + 1
+);
+console.log(testArrayv3);
+
+const diceRolls = Array.from(
+  { length: 100 },
+  (curr, i) => Math.floor(Math.random() * 6) + 1
+);
+
+console.log(diceRolls);
+
+// Note - this can be used on iterables like the DOM nodes
+// Getting deposit values from the HTML
+labelBalance.addEventListener('click', e => {
+  e.preventDefault();
+  const movementsUI = Array.from(
+    document.querySelectorAll('.movements__value'),
+    el => +el.textContent.replace('\u20AC', '')
+  ).reduce((curr, acc) => curr + acc, 0);
+  console.log(movementsUI);
+});
