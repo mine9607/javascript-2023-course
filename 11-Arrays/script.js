@@ -411,6 +411,8 @@ GOOD LUCK 😀
 
 // console.log(calcAverageHumanAge([16, 6, 10, 5, 6, 1, 4]));
 
+
+
 // Practice using map method
 const eurToUSD = 1.1;
 // const movUSD = movements.map(mov => mov * eurToUSD);
