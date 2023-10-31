@@ -86,3 +86,19 @@ console.log('---Deleting DOM Elements---');
 document
   .querySelector('.btn--close-cookie')
   .addEventListener('click', () => message.remove());
+
+console.log('---Styles, Attributes & Classes---');
+// Styles
+
+message.style.backgroundColor = '#37383d';
+message.style.width = '120%';
+
+console.log(message.style.width);
+// note the style height has not been set inline so we cannot log its value
+console.log(message.style.height);
+// but we can log the background color
+console.log(message.style.backgroundColor);
+
+// we can get properties from the CSS file like this:
+console.log(getComputedStyle(message)); // returns an object with all computed styles
+console.log(getComputedStyle(message).color);
